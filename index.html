@@ -1,87 +1,81 @@
-
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Go-Radio | 全球精选电台</title>
+    <title>Go-Radio | 全球多语种精选</title>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #e74c3c;
-            --bg: #f4f7f6;
-        }
+        :root { --primary: #2c3e50; --accent: #e74c3c; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--primary); display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { max-width: 600px; width: 100%; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        
+        .container { max-width: 650px; width: 100%; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         h1 { text-align: center; margin-bottom: 5px; color: var(--accent); letter-spacing: 2px; }
         .status { text-align: center; font-size: 0.9em; margin-bottom: 25px; color: #7f8c8d; }
-
-        /* 播放器核心 */
         .player-box { background: #ecf0f1; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
         audio { width: 100%; height: 40px; }
-        .current-name { font-weight: bold; text-align: center; margin-top: 10px; display: block; }
-
-        /* 列表分组 */
-        .group-title { font-size: 0.8em; text-transform: uppercase; color: #95a5a6; margin: 15px 0 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
-        .station-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-        
+        .current-name { font-weight: bold; text-align: center; margin-top: 10px; display: block; height: 1.2em; }
+        .group-title { font-size: 0.8em; text-transform: uppercase; color: #95a5a6; margin: 15px 0 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; font-weight: bold; }
+        .station-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
         button { 
             background: white; border: 1px solid #ddd; padding: 10px; border-radius: 6px; cursor: pointer;
             font-size: 0.85em; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         button:hover { background: var(--accent); color: white; border-color: var(--accent); }
         button.active { background: var(--primary); color: white; border-color: var(--primary); }
-
-        .footer { margin-top: 30px; font-size: 0.7em; color: #bdc3c7; text-align: center; }
+        .footer { margin-top: 30px; font-size: 0.7em; color: #bdc3c7; text-align: center; line-height: 1.6; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>GO-RADIO</h1>
-    <div class="status" id="js-status">就绪 - 准备出发</div>
+    <div class="status" id="js-status">就绪 - 聆听世界</div>
 
     <div class="player-box">
         <audio id="audio-player" controls preload="none"></audio>
-        <span class="current-name" id="current-display">请选择频道...</span>
+        <span class="current-name" id="current-display">Smooth 80s (默认)</span>
     </div>
 
-    <div id="station-list">
-        </div>
+    <div id="station-list"></div>
 
     <div class="footer">
-        Powered by Go-Radio Engine v1.0<br>
-        HTTPS / 443 Standard Stream Only
+        Go-Radio v1.1 | 纯净 HTTPS 直播流<br>
+        已剔除不稳链接，新增多语种支持
     </div>
 </div>
 
 <script>
 /**
- * Go-Radio 1.0 核心逻辑
+ * Go-Radio 1.1 数据配置
+ * 已根据测试结果：删除华语经典(zc4434)、删除Zeno Asia
  */
 const GoRadio = {
     "groups": {
-        "80s 经典": {
+        "华语/中文 (新歌/流行)": {
+            "华语流行新歌": "https://stream.revma.ihrhls.com/zc4426",
+            "华语综合频道": "https://stream.revma.ihrhls.com/zc4422"
+        },
+        "英语/全球流行": {
             "Smooth 80s": "https://media-ssl.musicradio.com/Smooth80s",
             "Heart 80s": "https://media-ssl.musicradio.com/Heart80s",
-            "Soma U80s": "https://ice1.somafm.com/u80s-128-mp3"
-        },
-        "华语精选": {
-            "华语经典": "https://stream.revma.ihrhls.com/zc4434",
-            "华语流行": "https://stream.revma.ihrhls.com/zc4426",
-            "华语综合": "https://stream.revma.ihrhls.com/zc4422"
-        },
-        "全球/亲子": {
-            "Classic FM": "https://media-ssl.musicradio.com/ClassicFM",
             "BBC World": "https://stream.live.vc.bbcmedia.co.uk/bbc_world_service",
-            "Smooth Chill": "https://media-ssl.musicradio.com/SmoothChill",
-            "Xmas Rocks": "https://ice1.somafm.com/xmasrocks-128-mp3"
+            "Capital FM": "https://media-ssl.musicradio.com/CapitalUK",
+            "Radio Paradise": "https://stream.radioparadise.com/main-128"
         },
-        "日语/亚洲": {
-            "Listen.moe": "https://listen.moe/stream",
-            "Zeno Asia": "https://stream.zeno.fm/f0p6th97d0quv"
+        "日语/韩语": {
+            "日语流行 (Moe)": "https://listen.moe/stream",
+            "韩语流行 (Moe)": "https://kpop.moe/stream"
+        },
+        "多语种精选 (顶级官媒流)": {
+            "法语频道 (FIP)": "https://icecast.radiofrance.fr/fip-hifi.aac",
+            "德语频道 (Swiss)": "https://stream.srg-ssr.ch/m/rsc_de/mp3_128",
+            "意大利语 (Swiss)": "https://stream.srg-ssr.ch/m/rsi/mp3_128",
+            "西班牙语 (RNE)": "https://rtveradio-live.akamaized.net/rne_r1_main.mp3"
+        },
+        "亲子/阅读氛围": {
+            "Classic FM": "https://media-ssl.musicradio.com/ClassicFM",
+            "Smooth Chill": "https://media-ssl.musicradio.com/SmoothChill",
+            "Soma U80s": "https://ice1.somafm.com/u80s-128-mp3",
+            "节日摇滚": "https://ice1.somafm.com/xmasrocks-128-mp3"
         }
     }
 };
@@ -91,7 +85,6 @@ const display = document.getElementById('current-display');
 const status = document.getElementById('js-status');
 const container = document.getElementById('station-list');
 
-// 初始化列表
 function init() {
     for (let group in GoRadio.groups) {
         const title = document.createElement('div');
@@ -113,26 +106,21 @@ function init() {
 }
 
 function playStream(name, url, btn) {
-    // 切换按钮状态
     document.querySelectorAll('button').forEach(b => b.className = '');
     btn.className = 'active';
-
-    // 播放逻辑
-    status.innerText = "正在连接服务器...";
-    display.innerText = "正在加载: " + name;
+    status.innerText = "连接中...";
+    display.innerText = name;
     
     player.src = url;
     player.play().then(() => {
         status.innerText = "正在播放 ● 直播中";
     }).catch(err => {
-        status.innerText = "连接失败 - 请尝试其他频道";
-        console.error("Playback error:", err);
+        status.innerText = "暂时无法连接该频道";
+        console.error("Error:", err);
     });
 }
 
 init();
 </script>
-
 </body>
 </html>
-
