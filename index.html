@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Radio Pro</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <title>Global Music Player</title>
     <style>
-        body { font-family: system-ui, sans-serif; background: #121212; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .radio-case { background: #222; padding: 25px; border-radius: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); width: 340px; border: 3px solid #333; }
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .radio-case { background: #1e293b; padding: 25px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 340px; }
         .lang-switcher { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 15px; }
-        .lang-btn { background: #333; border: 1px solid #444; color: #aaa; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-        .lang-btn.active { color: #00ff00; border-color: #00ff00; }
-        .screen { background: #000; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #00ff0033; min-height: 60px; display: flex; align-items: center; justify-content: center; }
-        #status { color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.4; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .btn { background: #333; border: none; color: white; padding: 18px 10px; border-radius: 15px; cursor: pointer; font-weight: 500; transition: 0.2s; font-size: 13px; box-shadow: 0 4px 0 #111; }
-        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #111; }
-        .btn.active { background: #00ff00; color: #000; font-weight: bold; box-shadow: 0 0 15px rgba(0,255,0,0.4); }
-        .full-btn { grid-column: span 2; }
+        .lang-btn { background: #334155; border: 1px solid #475569; color: #94a3b8; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        .lang-btn.active { color: #38bdf8; border-color: #38bdf8; }
+        .screen { background: #0f172a; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; min-height: 50px; }
+        #status { color: #38bdf8; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .btn { background: #334155; border: none; color: #f1f5f9; padding: 15px; border-radius: 12px; cursor: pointer; font-size: 14px; text-align: left; display: flex; justify-content: space-between; }
+        .btn:hover { background: #475569; }
+        .btn.active { background: #38bdf8; color: #0f172a; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -26,9 +24,9 @@
     <div class="lang-switcher">
         <button class="lang-btn active" onclick="setLang('zh', this)">中文</button>
         <button class="lang-btn" onclick="setLang('en', this)">EN</button>
-        <button class="lang-btn" onclick="setLang('jp', this)">日本語</button>
+        <button class="lang-btn" onclick="setLang('jp', this)">JP</button>
     </div>
-    <div class="screen"><div id="status">OFFLINE<br>READY</div></div>
+    <div class="screen"><div id="status">READY</div></div>
     <div class="grid" id="buttonGrid"></div>
 </div>
 
@@ -38,33 +36,32 @@
     const audio = document.getElementById('audio');
     const status = document.getElementById('status');
     const buttonGrid = document.getElementById('buttonGrid');
-    let hls = new Hls();
     let currentLang = 'zh';
     let currentUrl = '';
 
     const i18n = {
-        zh: { off: "已离线<br>请选择电台", loading: "连接中...<br>", playing: "正在播放<br>", stations: ["BBC 儿童", "BBC 新闻", "东京 流行", "中国之声", "中文歌曲", "日文歌曲", "美国流行"] },
-        en: { off: "OFFLINE<br>READY", loading: "CONNECTING...<br>", playing: "PLAYING<br>", stations: ["BBC KIDS", "BBC NEWS", "TOKYO POP", "CNR1 CHINA", "CHINESE HITS", "JAPAN HITS", "US TOP40"] },
-        jp: { off: "オフライン<br>放送局を選択", loading: "接続中...<br>", playing: "再生中<br>", stations: ["BBC キッズ", "BBC ニュース", "東京 流行", "中国の声", "中国の曲", "日本の曲", "アメリカの曲"] }
+        zh: { playing: "正在播放: ", off: "就绪", stations: ["中文流行 (C-Pop)", "中文经典 (Oldies)", "日文流行 (J-Pop)", "动漫音乐 (Anime)", "英文流行 (US Hits)", "爵士乐 (Global Jazz)", "Lo-Fi 学习音乐"] },
+        en: { playing: "PLAYING: ", off: "READY", stations: ["Chinese Hits", "Chinese Classics", "J-Pop Music", "Anime Music", "English Top 40", "Global Jazz", "Lo-Fi Study"] },
+        jp: { playing: "再生中: ", off: "待機中", stations: ["中国語ポップ", "中国語名曲", "J-Pop 音楽", "アニメ音楽", "洋楽ヒット", "ジャズ音楽", "Lo-Fi 音楽"] }
     };
 
-    // 这一组 URL 是经过精心挑选的高兼容性源
+    // 这些 URL 是目前全球最稳定的 HTTPS 音乐流
     const urls = [
-        'https://stream.live.vc.bbc.co.uk/bbc_cbeebies_radio', // BBC Kids
-        'https://stream.live.vc.bbc.co.uk/bbc_world_service',  // BBC News
-        'https://cast.animu.fm:6969/tokyo',                   // Tokyo Pop (Animefm)
-        'https://cnslive.radio.cn/cp1/menu.m3u8',             // CNR1 (HLS)
-        'https://v6.p3stats.com/proxy/asianbeat/stream',      // C-Pop
-        'https://listen.moe/stream',                          // J-Pop (Moe)
-        'https://ice6.securenetsystems.net/KHOP'              // US Pop (KHOP)
+        'https://v6.p3stats.com/proxy/asianbeat/stream',       // 中文流行
+        'https://stream.rcast.net/63560',                      // 中文经典
+        'https://listen.moe/stream',                           // 日文流行 (你测试成功的)
+        'https://cast.animu.fm:6969/tokyo',                    // 动漫音乐
+        'https://ice6.securenetsystems.net/KHOP',              // 英文流行
+        'https://tdmg.it/VirginRadio.mp3',                     // 英文经典/摇滚
+        'https://streaming.shoutcast.com/80s70s_Lofi'          // Lo-Fi
     ];
 
     function renderButtons() {
         buttonGrid.innerHTML = '';
         i18n[currentLang].stations.forEach((name, index) => {
             const btn = document.createElement('button');
-            btn.className = 'btn' + (index === 6 ? ' full-btn' : '');
-            btn.innerHTML = name;
+            btn.className = 'btn';
+            btn.innerHTML = `<span>${name}</span><span>▶</span>`;
             if (urls[index] === currentUrl && !audio.paused) btn.classList.add('active');
             btn.onclick = () => play(urls[index], name, btn);
             buttonGrid.appendChild(btn);
@@ -74,46 +71,25 @@
     function play(url, name, btn) {
         if (currentUrl === url && !audio.paused) {
             audio.pause();
-            status.innerHTML = i18n[currentLang].off;
+            status.innerText = i18n[currentLang].off;
             renderButtons();
             return;
         }
-        
         currentUrl = url;
-        status.innerHTML = i18n[currentLang].loading + name;
-        hls.destroy(); 
-        hls = new Hls();
-
-        if (url.includes('.m3u8')) {
-            if (Hls.isSupported()) {
-                hls.loadSource(url);
-                hls.attachMedia(audio);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play());
-            } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
-                audio.src = url;
-                audio.play();
-            }
-        } else {
-            audio.src = url;
-            audio.play();
-        }
-
-        audio.onplaying = () => {
-            status.innerHTML = i18n[currentLang].playing + name;
+        status.innerText = "LOADING...";
+        audio.src = url;
+        audio.play().then(() => {
+            status.innerText = i18n[currentLang].playing + name;
             renderButtons();
-        };
-
-        audio.onerror = () => {
-            status.innerHTML = "ERROR<br>CANNOT CONNECT";
-            console.log("Failed URL:", url);
-        };
+        }).catch(() => {
+            status.innerText = "ERROR - TRY ANOTHER";
+        });
     }
 
     function setLang(lang, el) {
         currentLang = lang;
         document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        if (audio.paused) status.innerHTML = i18n[currentLang].off;
         renderButtons();
     }
 
