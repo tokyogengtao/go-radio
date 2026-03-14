@@ -73,13 +73,20 @@
     };
 
     const urls = [
-        'https://as-hls-ww-live.akamaized.net/pool_904/live/ww/cbeebies_radio/cbeebies_radio.isml/cbeebies_radio-audio%3d128000.norewind.m3u8',
+        // 1. BBC Kids (CBeebies 替代源)
+        'https://stream.live.vc.bbc.co.uk/bbc_cbeebies_radio',
+        // 2. BBC News (World Service)
         'https://stream.live.vc.bbc.co.uk/bbc_world_service',
-        'https://safe-stream.jp/tokyofm/live.m3u8',
-        'https://lkyun-s-sh.itsc.cuc.edu.cn/radios/cnr1.flv',
+        // 3. 东京 FM (J-Pop 流行电台)
+        'https://kathy.torontocast.com:2240/stream',
+        // 4. 北京 FM (CNR1 中国之声 HTTPS 源)
+        'https://cnslive.radio.cn/cp1/menu.m3u8',
+        // 5. 中文歌曲 (C-Pop 频道)
         'https://v6.p3stats.com/proxy/asianbeat/stream',
+        // 6. 日文歌曲 (你测试成功的 J-Pop)
         'https://listen.moe/stream',
-        'https://icy.unitedradio.it/VirginRadio.mp3'
+        // 7. 美国歌曲 (US Top 40)
+        'https://ice5.securenetsystems.net/H047'
     ];
 
     function renderButtons() {
