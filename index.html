@@ -1,99 +1,138 @@
+
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Music Player</title>
+    <title>Go-Radio | 全球精选电台</title>
     <style>
-        body { font-family: system-ui, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .radio-case { background: #1e293b; padding: 25px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 340px; }
-        .lang-switcher { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 15px; }
-        .lang-btn { background: #334155; border: 1px solid #475569; color: #94a3b8; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; }
-        .lang-btn.active { color: #38bdf8; border-color: #38bdf8; }
-        .screen { background: #0f172a; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; min-height: 50px; }
-        #status { color: #38bdf8; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; }
-        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .btn { background: #334155; border: none; color: #f1f5f9; padding: 15px; border-radius: 12px; cursor: pointer; font-size: 14px; text-align: left; display: flex; justify-content: space-between; }
-        .btn:hover { background: #475569; }
-        .btn.active { background: #38bdf8; color: #0f172a; font-weight: bold; }
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #f4f7f6;
+        }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--primary); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { max-width: 600px; width: 100%; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        h1 { text-align: center; margin-bottom: 5px; color: var(--accent); letter-spacing: 2px; }
+        .status { text-align: center; font-size: 0.9em; margin-bottom: 25px; color: #7f8c8d; }
+
+        /* 播放器核心 */
+        .player-box { background: #ecf0f1; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        audio { width: 100%; height: 40px; }
+        .current-name { font-weight: bold; text-align: center; margin-top: 10px; display: block; }
+
+        /* 列表分组 */
+        .group-title { font-size: 0.8em; text-transform: uppercase; color: #95a5a6; margin: 15px 0 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+        .station-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        
+        button { 
+            background: white; border: 1px solid #ddd; padding: 10px; border-radius: 6px; cursor: pointer;
+            font-size: 0.85em; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        button:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        button.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .footer { margin-top: 30px; font-size: 0.7em; color: #bdc3c7; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="radio-case">
-    <div class="lang-switcher">
-        <button class="lang-btn active" onclick="setLang('zh', this)">中文</button>
-        <button class="lang-btn" onclick="setLang('en', this)">EN</button>
-        <button class="lang-btn" onclick="setLang('jp', this)">JP</button>
+<div class="container">
+    <h1>GO-RADIO</h1>
+    <div class="status" id="js-status">就绪 - 准备出发</div>
+
+    <div class="player-box">
+        <audio id="audio-player" controls preload="none"></audio>
+        <span class="current-name" id="current-display">请选择频道...</span>
     </div>
-    <div class="screen"><div id="status">READY</div></div>
-    <div class="grid" id="buttonGrid"></div>
+
+    <div id="station-list">
+        </div>
+
+    <div class="footer">
+        Powered by Go-Radio Engine v1.0<br>
+        HTTPS / 443 Standard Stream Only
+    </div>
 </div>
 
-<audio id="audio" crossorigin="anonymous"></audio>
-
 <script>
-    const audio = document.getElementById('audio');
-    const status = document.getElementById('status');
-    const buttonGrid = document.getElementById('buttonGrid');
-    let currentLang = 'zh';
-    let currentUrl = '';
-
-    const i18n = {
-        zh: { playing: "正在播放: ", off: "就绪", stations: ["中文流行 (C-Pop)", "中文经典 (Oldies)", "日文流行 (J-Pop)", "动漫音乐 (Anime)", "英文流行 (US Hits)", "爵士乐 (Global Jazz)", "Lo-Fi 学习音乐"] },
-        en: { playing: "PLAYING: ", off: "READY", stations: ["Chinese Hits", "Chinese Classics", "J-Pop Music", "Anime Music", "English Top 40", "Global Jazz", "Lo-Fi Study"] },
-        jp: { playing: "再生中: ", off: "待機中", stations: ["中国語ポップ", "中国語名曲", "J-Pop 音楽", "アニメ音楽", "洋楽ヒット", "ジャズ音楽", "Lo-Fi 音楽"] }
-    };
-
-    // 这些 URL 是目前全球最稳定的 HTTPS 音乐流
-    const urls = [
-        'https://v6.p3stats.com/proxy/asianbeat/stream',       // 中文流行
-        'https://stream.rcast.net/63560',                      // 中文经典
-        'https://listen.moe/stream',                           // 日文流行 (你测试成功的)
-        'https://cast.animu.fm:6969/tokyo',                    // 动漫音乐
-        'https://ice6.securenetsystems.net/KHOP',              // 英文流行
-        'https://tdmg.it/VirginRadio.mp3',                     // 英文经典/摇滚
-        'https://streaming.shoutcast.com/80s70s_Lofi'          // Lo-Fi
-    ];
-
-    function renderButtons() {
-        buttonGrid.innerHTML = '';
-        i18n[currentLang].stations.forEach((name, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.innerHTML = `<span>${name}</span><span>▶</span>`;
-            if (urls[index] === currentUrl && !audio.paused) btn.classList.add('active');
-            btn.onclick = () => play(urls[index], name, btn);
-            buttonGrid.appendChild(btn);
-        });
-    }
-
-    function play(url, name, btn) {
-        if (currentUrl === url && !audio.paused) {
-            audio.pause();
-            status.innerText = i18n[currentLang].off;
-            renderButtons();
-            return;
+/**
+ * Go-Radio 1.0 核心逻辑
+ */
+const GoRadio = {
+    "groups": {
+        "80s 经典": {
+            "Smooth 80s": "https://media-ssl.musicradio.com/Smooth80s",
+            "Heart 80s": "https://media-ssl.musicradio.com/Heart80s",
+            "Soma U80s": "https://ice1.somafm.com/u80s-128-mp3"
+        },
+        "华语精选": {
+            "华语经典": "https://stream.revma.ihrhls.com/zc4434",
+            "华语流行": "https://stream.revma.ihrhls.com/zc4426",
+            "华语综合": "https://stream.revma.ihrhls.com/zc4422"
+        },
+        "全球/亲子": {
+            "Classic FM": "https://media-ssl.musicradio.com/ClassicFM",
+            "BBC World": "https://stream.live.vc.bbcmedia.co.uk/bbc_world_service",
+            "Smooth Chill": "https://media-ssl.musicradio.com/SmoothChill",
+            "Xmas Rocks": "https://ice1.somafm.com/xmasrocks-128-mp3"
+        },
+        "日语/亚洲": {
+            "Listen.moe": "https://listen.moe/stream",
+            "Zeno Asia": "https://stream.zeno.fm/f0p6th97d0quv"
         }
-        currentUrl = url;
-        status.innerText = "LOADING...";
-        audio.src = url;
-        audio.play().then(() => {
-            status.innerText = i18n[currentLang].playing + name;
-            renderButtons();
-        }).catch(() => {
-            status.innerText = "ERROR - TRY ANOTHER";
-        });
     }
+};
 
-    function setLang(lang, el) {
-        currentLang = lang;
-        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-        renderButtons();
+const player = document.getElementById('audio-player');
+const display = document.getElementById('current-display');
+const status = document.getElementById('js-status');
+const container = document.getElementById('station-list');
+
+// 初始化列表
+function init() {
+    for (let group in GoRadio.groups) {
+        const title = document.createElement('div');
+        title.className = 'group-title';
+        title.innerText = group;
+        container.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'station-grid';
+        
+        for (let name in GoRadio.groups[group]) {
+            const btn = document.createElement('button');
+            btn.innerText = name;
+            btn.onclick = () => playStream(name, GoRadio.groups[group][name], btn);
+            grid.appendChild(btn);
+        }
+        container.appendChild(grid);
     }
+}
 
-    renderButtons();
+function playStream(name, url, btn) {
+    // 切换按钮状态
+    document.querySelectorAll('button').forEach(b => b.className = '');
+    btn.className = 'active';
+
+    // 播放逻辑
+    status.innerText = "正在连接服务器...";
+    display.innerText = "正在加载: " + name;
+    
+    player.src = url;
+    player.play().then(() => {
+        status.innerText = "正在播放 ● 直播中";
+    }).catch(err => {
+        status.innerText = "连接失败 - 请尝试其他频道";
+        console.error("Playback error:", err);
+    });
+}
+
+init();
 </script>
+
 </body>
 </html>
+
